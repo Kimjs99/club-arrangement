@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.4.0] - 2026-03-23
+
+### ✨ Features
+- 관리자 페이지 탭 기반 구조로 전면 개편 (d63c291)
+  - 📊 현황판: 기존 배정률·학급 현황·동아리별 집계·제출 기록 유지
+  - 👤 학생/배정 관리: 학급 선택 → 학생 목록 + 배정 현황 조회
+    - 학생 추가(전학생 등): 번호·이름 입력 → 2단계 확인 모달
+    - 배정 변경: 동아리 선택 → 변경 전/후 확인 2단계 모달
+  - 📋 동아리 명단: 동아리 선택 → 학생 목록 확인 + 출석부 XLSX 다운로드
+- 신규 API 추가: GET /api/admin/class, POST /api/admin/student, PATCH /api/admin/assignment (d63c291)
+
+---
+
 ## [v0.3.0] - 2026-03-23
 
 ### ✨ Features
