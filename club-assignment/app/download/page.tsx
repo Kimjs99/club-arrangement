@@ -109,7 +109,7 @@ export default function DownloadPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">{selected.name}</h2>
                   <p className="text-sm text-gray-500">담당: {selected.teacherName} · {preview.length}명</p>

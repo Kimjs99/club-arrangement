@@ -174,7 +174,7 @@ export default function AdminPage() {
     <div className="min-h-screen p-4 max-w-6xl mx-auto">
 
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-4">
           <button onClick={() => router.push('/')} className="text-gray-500 hover:text-gray-700 text-2xl">←</button>
           <div>
@@ -188,17 +188,17 @@ export default function AdminPage() {
             새로고침
           </button>
           <button onClick={() => { setResetAllOpen(true); setResetAllConfirmText(''); }}
-            className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 text-sm font-medium">
+            className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 text-sm font-medium whitespace-nowrap">
             전체 데이터 삭제
           </button>
         </div>
       </div>
 
       {/* 탭 네비게이션 */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl overflow-x-auto">
         {([['stats', '📊 현황판'], ['manage', '👤 학생/배정 관리'], ['clubs', '📋 동아리 명단']] as [Tab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${activeTab === key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             {label}
           </button>
         ))}
