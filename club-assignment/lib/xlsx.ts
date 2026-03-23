@@ -66,8 +66,8 @@ export async function generateAttendanceSheet(
   statsRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
   statsRow.height = 20;
 
-  // 행 4: 헤더 (번호/학년/반/이름 + 1차시~N차시)
-  const headerRow = sheet.addRow(['번호', '학년', '반', '이름', ...colLabels]);
+  // 행 4: 헤더 (학년/반/번호/이름 + 1차시~N차시)
+  const headerRow = sheet.addRow(['학년', '반', '번호', '이름', ...colLabels]);
   headerRow.height = 22;
   for (let col = 1; col <= totalCols; col++) {
     const cell = headerRow.getCell(col);
@@ -119,7 +119,7 @@ export async function generateAttendanceSheet(
     const bgColor = isEven ? 'FFF5F9FC' : 'FFFFFFFF';
 
     const row = sheet.addRow([
-      idx + 1, student.grade, student.classNum, student.name,
+      student.grade, student.classNum, student.number, student.name,
       ...Array(attendanceCols).fill(''),
     ]);
     row.height = 20;
