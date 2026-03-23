@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.0] - 2026-03-23
+
+### ✨ Features
+- 삭제 전 자동 백업 및 복원 기능 추가 (c62ba3a)
+  - 전체 삭제 / 학급 초기화 시 Google Sheets에 백업 시트 자동 생성
+  - 관리자 페이지 '💾 백업/복원' 탭: 백업 목록 확인, 2단계 복원, 백업 삭제
+  - 신규 API: GET/DELETE /api/admin/backups, POST /api/admin/restore
+- 푸터에 버전 표시 추가 (v1.0.0) (ecaa990)
+
+### 🐛 Bug Fixes
+- 관리자 동아리별 배정현황 중복 표시 수정 — 동아리명 기준 중복 제거 후 전체 인원 합산 (05cb0db)
+
+---
+
 ## [v0.5.0] - 2026-03-23
 
 ### ✨ Features
