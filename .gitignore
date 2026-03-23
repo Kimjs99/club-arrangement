@@ -1,0 +1,7 @@
+# Next.js
+club-assignment/.next/
+club-assignment/node_modules/
+club-assignment/.env.local
+
+# macOS
+.DS_Store
