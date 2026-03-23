@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteRowsByCondition } from '@/lib/sheets';
+import { getSheetData, deleteRowsByCondition, createSheetWithData } from '@/lib/sheets';
+
+function kstTimestamp() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  const date = `${kst.getUTCFullYear()}${p(kst.getUTCMonth() + 1)}${p(kst.getUTCDate())}`;
+  const time = `${p(kst.getUTCHours())}${p(kst.getUTCMinutes())}${p(kst.getUTCSeconds())}`;
+  return { date, time };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +21,24 @@ export async function POST(req: NextRequest) {
 
     if (!grade || !classNum) {
       return NextResponse.json({ error: '학년과 반을 지정해주세요.' }, { status: 400 });
+    }
+
+    // 삭제 전 해당 학급 데이터 백업
+    const assignRows = await getSheetData('동아리_배정결과');
+    const header = assignRows[0] ?? [];
+    const classData = assignRows.slice(1).filter(
+      (r) => Number(r[0]) === grade && Number(r[1]) === classNum
+    );
+
+    if (classData.length > 0) {
+      const { date, time } = kstTimestamp();
+      const backupName = `백업_${grade}학년${classNum}반_${date}_${time}`;
+      const backupValues: string[][] = [
+        ['===동아리_배정결과==='],
+        header,
+        ...classData,
+      ];
+      await createSheetWithData(backupName, backupValues);
     }
 
     await deleteRowsByCondition(

@@ -9,8 +9,9 @@ interface RecentRecord { submittedAt: string; grade: number; classNum: number; t
 interface Stats { totalStudents: number; assignedStudents: number; unassignedStudents: number; submittedClasses: ClassInfo[]; unsubmittedClasses: ClassInfo[]; clubStats: ClubStat[]; recentRecords: RecentRecord[]; }
 interface StudentWithClub { grade: number; classNum: number; number: number; name: string; clubName: string; }
 interface Club { name: string; teacherName: string; }
+interface BackupEntry { name: string; type: 'full' | 'class'; label: string; timestamp: string; }
 
-type Tab = 'stats' | 'manage' | 'clubs';
+type Tab = 'stats' | 'manage' | 'clubs' | 'backup';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -51,6 +52,14 @@ export default function AdminPage() {
   const [clubMembers, setClubMembers] = useState<StudentWithClub[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  // ── 백업/복원 상태 ─────────────────────────────────────────────
+  const [backups, setBackups] = useState<BackupEntry[]>([]);
+  const [loadingBackups, setLoadingBackups] = useState(false);
+  const [restoreTarget, setRestoreTarget] = useState<BackupEntry | null>(null);
+  const [restoreConfirm, setRestoreConfirm] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [deletingBackupConfirm, setDeletingBackupConfirm] = useState<string | null>(null);
+
   const fetchStats = useCallback(async (code: string) => {
     setLoading(true);
     const res = await fetch('/api/admin/stats', { headers: { 'x-admin-code': code } });
@@ -80,6 +89,19 @@ export default function AdminPage() {
     if (!manageGrade || !manageClass || !adminCode) return;
     refreshClassStudents(adminCode, manageGrade, manageClass);
   }, [manageGrade, manageClass, adminCode, refreshClassStudents]);
+
+  // 백업 목록 로드
+  const fetchBackups = useCallback(async (code: string) => {
+    setLoadingBackups(true);
+    const res = await fetch('/api/admin/backups', { headers: { 'x-admin-code': code } });
+    if (res.ok) setBackups(await res.json());
+    setLoadingBackups(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'backup' || !adminCode) return;
+    fetchBackups(adminCode);
+  }, [activeTab, adminCode, fetchBackups]);
 
   // 동아리 명단 로드
   useEffect(() => {
@@ -152,6 +174,40 @@ export default function AdminPage() {
     } else alert('배정 변경 실패');
   }
 
+  // ── 백업 복원 ──────────────────────────────────────────────────
+  async function doRestore() {
+    if (!restoreTarget || !adminCode) return;
+    setRestoring(true);
+    const res = await fetch('/api/admin/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-code': adminCode },
+      body: JSON.stringify({ backupName: restoreTarget.name }),
+    });
+    setRestoring(false);
+    if (res.ok) {
+      alert('복원이 완료되었습니다.');
+      setRestoreTarget(null); setRestoreConfirm(false);
+      fetchStats(adminCode); fetchBackups(adminCode);
+    } else {
+      const data = await res.json();
+      alert(`복원 실패: ${data.error}`);
+    }
+  }
+
+  async function doDeleteBackup(name: string) {
+    if (!adminCode) return;
+    const res = await fetch(`/api/admin/backups?name=${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-code': adminCode },
+    });
+    if (res.ok) {
+      setDeletingBackupConfirm(null);
+      fetchBackups(adminCode);
+    } else {
+      alert('백업 삭제 실패');
+    }
+  }
+
   // ── 출석부 다운로드 ────────────────────────────────────────────
   async function downloadClubXlsx() {
     if (!selectedClub) return;
@@ -196,7 +252,7 @@ export default function AdminPage() {
 
       {/* 탭 네비게이션 */}
       <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl overflow-x-auto">
-        {([['stats', '📊 현황판'], ['manage', '👤 학생/배정 관리'], ['clubs', '📋 동아리 명단']] as [Tab, string][]).map(([key, label]) => (
+        {([['stats', '📊 현황판'], ['manage', '👤 학생/배정 관리'], ['clubs', '📋 동아리 명단'], ['backup', '💾 백업/복원']] as [Tab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${activeTab === key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             {label}
@@ -472,6 +528,76 @@ export default function AdminPage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════ */}
+      {/* 백업/복원 탭                                              */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {activeTab === 'backup' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-gray-700">💾 백업 목록</h2>
+              <button onClick={() => fetchBackups(adminCode)}
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                새로고침
+              </button>
+            </div>
+
+            {loadingBackups ? (
+              <div className="text-center py-8 text-gray-400">불러오는 중...</div>
+            ) : backups.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">
+                <div className="text-4xl mb-3">🗄️</div>
+                <p className="font-medium">저장된 백업이 없습니다.</p>
+                <p className="text-sm mt-1">전체 삭제 또는 학급 초기화 시 자동으로 백업이 생성됩니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {backups.map((b) => (
+                  <div key={b.name} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${b.type === 'full' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {b.type === 'full' ? '전체' : b.label}
+                      </span>
+                      <span className="text-sm text-gray-600">{b.timestamp}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {deletingBackupConfirm === b.name ? (
+                        <>
+                          <span className="text-xs text-red-600 font-medium">삭제할까요?</span>
+                          <button onClick={() => doDeleteBackup(b.name)}
+                            className="text-xs px-2.5 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600">삭제</button>
+                          <button onClick={() => setDeletingBackupConfirm(null)}
+                            className="text-xs px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100">취소</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => { setRestoreTarget(b); setRestoreConfirm(false); }}
+                            className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                            복원
+                          </button>
+                          <button onClick={() => setDeletingBackupConfirm(b.name)}
+                            className="text-xs px-3 py-1.5 border border-red-200 text-red-500 rounded-lg hover:bg-red-50">
+                            삭제
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <p className="text-sm text-amber-800">
+              <span className="font-bold">안내: </span>
+              백업은 전체 삭제 또는 학급 초기화 시 자동 생성됩니다.
+              복원 시 현재 데이터가 백업 시점으로 교체되며, 이후 변경사항은 사라집니다.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════ */}
       {/* 모달: 학생 추가 1단계 — 입력                               */}
       {/* ══════════════════════════════════════════════════════════ */}
       {addStudentOpen && !addStudentConfirm && (
@@ -611,6 +737,54 @@ export default function AdminPage() {
       {/* ══════════════════════════════════════════════════════════ */}
       {/* 모달: 전체 데이터 삭제 확인                                */}
       {/* ══════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {/* 모달: 백업 복원 1단계 — 내용 확인                         */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {restoreTarget && !restoreConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+            <h3 className="text-lg font-bold mb-2">백업 복원</h3>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm space-y-1">
+              <p className="font-bold text-amber-800">
+                {restoreTarget.type === 'full' ? '전체 데이터' : `${restoreTarget.label} 데이터`}를 복원합니다.
+              </p>
+              <p className="text-amber-700">백업 시각: {restoreTarget.timestamp}</p>
+              <p className="text-amber-700">
+                {restoreTarget.type === 'full'
+                  ? '현재의 모든 배정 데이터가 백업 시점으로 교체됩니다.'
+                  : '해당 학급의 배정 데이터가 백업 시점으로 교체됩니다.'}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setRestoreTarget(null)}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600">취소</button>
+              <button onClick={() => setRestoreConfirm(true)}
+                className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600">다음</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 모달: 백업 복원 2단계 — 최종 확인 */}
+      {restoreTarget && restoreConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+            <h3 className="text-lg font-bold mb-4">복원 최종 확인</h3>
+            <p className="text-gray-600 text-sm mb-6">
+              이 작업은 되돌릴 수 없습니다. 현재 데이터가 백업 시점으로 교체됩니다. 계속하시겠습니까?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setRestoreConfirm(false)}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600">이전</button>
+              <button onClick={doRestore} disabled={restoring}
+                className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold disabled:opacity-50 hover:bg-amber-600">
+                {restoring ? '복원 중...' : '복원 확인'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {resetAllOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">

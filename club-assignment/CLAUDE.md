@@ -2,8 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Important**: This project uses Next.js 16 (Turbopack). APIs, conventions, and file structure may differ from earlier versions. Check `node_modules/next/dist/docs/` before writing code and heed deprecation notices.
-
 ## Commands
 
 ```bash
@@ -13,7 +11,15 @@ npm run start        # 프로덕션 서버 실행
 npm run setup-sheets # Google Sheets 초기 시트 생성 (scripts/setup-sheets.mjs)
 ```
 
-빌드는 타입 검사를 포함하므로 `npm run build`로 타입 오류를 확인한다.
+`npm run build`로 TypeScript 타입 오류를 확인한다 (lint도 포함됨).
+
+## 기술 스택
+
+- **Next.js 16.2.1** (App Router, Turbopack), React 19, TypeScript
+- **Tailwind CSS v4** — `@tailwind` 디렉티브 없이 `@import "tailwindcss"` 방식 사용
+- **Google Sheets API v4** — 서비스 계정 인증, DB 없음
+- **exceljs** — 서버사이드 Excel 파일 생성/파싱
+- **Vercel** 배포
 
 ## Architecture
 
