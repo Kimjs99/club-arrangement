@@ -70,7 +70,7 @@ export default function Home() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-900 text-4xl mb-4 shadow-lg">
             🏫
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">동아리 배정 관리 시스템</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">화접중학교 창체동아리 배정 관리 시스템</h1>
           <p className="text-gray-500">역할을 선택하고 접근 코드를 입력하세요</p>
         </div>
 

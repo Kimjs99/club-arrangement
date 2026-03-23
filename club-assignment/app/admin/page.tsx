@@ -43,6 +43,11 @@ export default function AdminPage() {
   const [resetTarget, setResetTarget] = useState<ClassInfo | null>(null);
   const [resetting, setResetting] = useState(false);
   const [adminCode, setAdminCode] = useState('');
+  const [resetAllOpen, setResetAllOpen] = useState(false);
+  const [resetAllConfirmText, setResetAllConfirmText] = useState('');
+  const [resettingAll, setResettingAll] = useState(false);
+
+  const RESET_ALL_PHRASE = '전체삭제확인';
 
   const fetchStats = useCallback(async (code: string) => {
     setLoading(true);
@@ -63,6 +68,24 @@ export default function AdminPage() {
     setAdminCode(code);
     fetchStats(code);
   }, [fetchStats, router]);
+
+  async function doResetAll() {
+    if (!adminCode || resetAllConfirmText !== RESET_ALL_PHRASE) return;
+    setResettingAll(true);
+    const res = await fetch('/api/admin/reset-all', {
+      method: 'POST',
+      headers: { 'x-admin-code': adminCode },
+    });
+    setResettingAll(false);
+    if (res.ok) {
+      alert('전체 데이터가 삭제되었습니다.');
+      setResetAllOpen(false);
+      setResetAllConfirmText('');
+      fetchStats(adminCode);
+    } else {
+      alert('전체 삭제 실패');
+    }
+  }
 
   async function doReset() {
     if (!resetTarget || !adminCode) return;
@@ -103,10 +126,18 @@ export default function AdminPage() {
             <p className="text-gray-500 text-sm">전체 동아리 배정 현황</p>
           </div>
         </div>
-        <button onClick={() => fetchStats(adminCode)}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-sm font-medium">
-          새로고침
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => fetchStats(adminCode)}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-sm font-medium">
+            새로고침
+          </button>
+          <button
+            onClick={() => { setResetAllOpen(true); setResetAllConfirmText(''); }}
+            className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 text-sm font-medium"
+          >
+            전체 데이터 삭제
+          </button>
+        </div>
       </div>
 
       {/* 요약 카드 */}
@@ -260,6 +291,52 @@ export default function AdminPage() {
           ))}
         </div>
       </div>
+
+      {/* 전체 데이터 삭제 모달 */}
+      {resetAllOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">⚠️</span>
+              <h3 className="text-xl font-bold text-red-600">전체 데이터 삭제</h3>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 text-sm text-red-700 space-y-1">
+              <p className="font-bold">다음 데이터가 모두 삭제됩니다:</p>
+              <ul className="list-disc list-inside space-y-0.5 mt-1">
+                <li>마스터_학생명단 (전체 학생)</li>
+                <li>동아리_배정결과 (전체 배정 데이터)</li>
+                <li>배정_제출기록 (전체 제출 이력)</li>
+              </ul>
+              <p className="mt-2 font-bold">이 작업은 되돌릴 수 없습니다.</p>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              계속하려면 아래에 <strong className="text-red-600">{RESET_ALL_PHRASE}</strong> 를 정확히 입력하세요.
+            </p>
+            <input
+              type="text"
+              value={resetAllConfirmText}
+              onChange={(e) => setResetAllConfirmText(e.target.value)}
+              placeholder={RESET_ALL_PHRASE}
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-red-400 mb-5 text-center tracking-widest font-mono"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setResetAllOpen(false); setResetAllConfirmText(''); }}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={doResetAll}
+                disabled={resettingAll || resetAllConfirmText !== RESET_ALL_PHRASE}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-700"
+              >
+                {resettingAll ? '삭제 중...' : '전체 삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 초기화 확인 모달 */}
       {resetTarget && (
