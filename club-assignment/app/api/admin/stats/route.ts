@@ -37,11 +37,19 @@ export async function GET(req: NextRequest) {
       if (name) countMap[name] = (countMap[name] ?? 0) + 1;
     }
 
-    const clubStats = clubs.map((row) => ({
-      name: row[0],
-      teacherName: row[1] ?? '',
-      count: countMap[row[0]] ?? 0,
-    }));
+    // 동아리명 중복 제거 (첫 번째 항목 기준)
+    const seenClubs = new Set<string>();
+    const clubStats = clubs
+      .filter((row) => {
+        if (seenClubs.has(row[0])) return false;
+        seenClubs.add(row[0]);
+        return true;
+      })
+      .map((row) => ({
+        name: row[0],
+        teacherName: row[1] ?? '',
+        count: countMap[row[0]] ?? 0,
+      }));
 
     // 미제출 학급 (마스터 A:학년, B:반 기준)
     const allClasses = Array.from(
