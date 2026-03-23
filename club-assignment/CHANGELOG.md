@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2026-03-23
+
+### ✨ Features
+- 푸터 버전 자동화 — `package.json` version 필드에서 읽도록 변경, 하드코딩 제거 (e8f49dc)
+  - 이후 `package.json`의 `"version"` 값만 변경하면 푸터에 자동 반영
+
+### 📝 Documentation
+- CLAUDE.md 업데이트 — 백업/복원 API 3개 및 동작 방식 추가 (3061de2)
+
+---
+
 ## [v1.1.0] - 2026-03-23
 
 ### ✨ Features
