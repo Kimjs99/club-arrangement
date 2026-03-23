@@ -43,6 +43,20 @@ export async function POST(req: NextRequest) {
       ]);
     }
 
+    // 마스터 학생명단 upsert: 없으면 추가 (A:학년 B:반 C:번호 D:이름)
+    const masterRows = await getSheetData('마스터_학생명단');
+    const masterData = masterRows.slice(1);
+    for (const a of assignments) {
+      if (!a.studentName) continue;
+      const exists = masterData.some(
+        (r) => Number(r[0]) === a.grade && Number(r[1]) === a.classNum && Number(r[2]) === a.number
+      );
+      if (!exists) {
+        await appendRow('마스터_학생명단', [a.grade, a.classNum, a.number, a.studentName]);
+        masterData.push([String(a.grade), String(a.classNum), String(a.number), a.studentName]);
+      }
+    }
+
     // 제출 기록 append
     const records = await getSheetData('배정_제출기록');
     const recordRows = records.slice(1);

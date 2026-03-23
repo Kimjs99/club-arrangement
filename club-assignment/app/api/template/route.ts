@@ -26,9 +26,11 @@ export async function GET(req: NextRequest) {
 
     const clubNames = clubRows.slice(1).filter((r) => r[0]).map((r) => r[0]);
 
-    if (students.length === 0) {
-      return NextResponse.json({ error: '해당 학급 학생이 없습니다.' }, { status: 404 });
-    }
+    // 마스터 시트에 학생이 없으면 빈 30행 템플릿 생성
+    const isBlankTemplate = students.length === 0;
+    const rows = isBlankTemplate
+      ? Array.from({ length: 50 }, (_, i) => ({ number: i + 1, name: '' }))
+      : students;
 
     const workbook = new ExcelJS.Workbook();
 
@@ -47,7 +49,9 @@ export async function GET(req: NextRequest) {
     // 안내
     inputSheet.mergeCells('A2:C2');
     const guideCell = inputSheet.getCell('A2');
-    guideCell.value = '※ C열(동아리명)에만 입력하세요. A열·B열은 수정하지 마세요.';
+    guideCell.value = isBlankTemplate
+      ? '※ A열(번호)은 수정하지 마세요. B열(이름)과 C열(동아리명)을 입력하세요.'
+      : '※ C열(동아리명)에만 입력하세요. A열·B열은 수정하지 마세요.';
     guideCell.font = { size: 9, italic: true, color: { argb: 'FF888888' } };
     guideCell.alignment = { horizontal: 'center' };
 
@@ -65,7 +69,7 @@ export async function GET(req: NextRequest) {
     });
 
     // 학생 행
-    students.forEach((s, idx) => {
+    rows.forEach((s, idx) => {
       const row = inputSheet.addRow([s.number, s.name, '']);
       row.height = 22;
 
@@ -77,9 +81,9 @@ export async function GET(req: NextRequest) {
       numCell.alignment = { horizontal: 'center' };
       numCell.font = { size: 10, color: { argb: 'FF555555' } };
 
-      // 이름 셀
+      // 이름 셀 (마스터에 데이터 없으면 입력 가능)
       const nameCell = row.getCell(2);
-      nameCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EEF4' } };
+      nameCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isBlankTemplate ? bgColor : 'FFE8EEF4' } };
       nameCell.font = { size: 10, bold: true };
       nameCell.alignment = { horizontal: 'left' };
 

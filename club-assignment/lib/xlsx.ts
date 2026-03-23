@@ -19,11 +19,8 @@ export async function generateAttendanceSheet(
 
   const sheet = workbook.addWorksheet(`${data.club.name} 출석부`);
 
-  // 월 라벨 생성 (3월~2월, 학기 기준 20회)
-  const monthLabels: string[] = [];
-  for (let m = 3; m <= 12; m++) monthLabels.push(`${m}월`);
-  for (let m = 1; m <= 2; m++) monthLabels.push(`${m}월`);
-  const colLabels = monthLabels.slice(0, attendanceCols);
+  // 차시 라벨 생성 (1차시 ~ N차시)
+  const colLabels = Array.from({ length: attendanceCols }, (_, i) => `${i + 1}차시`);
 
   const totalCols = 4 + attendanceCols; // 번호, 학년, 반, 이름 + 출석열
 
@@ -33,7 +30,7 @@ export async function generateAttendanceSheet(
   sheet.getColumn(3).width = 6;   // 반
   sheet.getColumn(4).width = 14;  // 이름
   for (let i = 5; i <= totalCols; i++) {
-    sheet.getColumn(i).width = 7;
+    sheet.getColumn(i).width = 8;
   }
 
   // 행 1: 제목
@@ -69,7 +66,7 @@ export async function generateAttendanceSheet(
   statsRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
   statsRow.height = 20;
 
-  // 행 4: 헤더
+  // 행 4: 헤더 (번호/학년/반/이름 + 1차시~N차시)
   const headerRow = sheet.addRow(['번호', '학년', '반', '이름', ...colLabels]);
   headerRow.height = 22;
   for (let col = 1; col <= totalCols; col++) {
@@ -83,15 +80,41 @@ export async function generateAttendanceSheet(
     };
   }
 
+  // 행 5: 날짜 기입란
+  const dateRow = sheet.addRow(['날짜', '', '', '', ...Array(attendanceCols).fill('')]);
+  sheet.mergeCells(5, 1, 5, 4);
+  dateRow.height = 22;
+  const dateLabelCell = dateRow.getCell(1);
+  dateLabelCell.value = '날짜';
+  dateLabelCell.font = { bold: true, size: 10, color: { argb: 'FF555555' } };
+  dateLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEEEEE' } };
+  dateLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  dateLabelCell.border = {
+    top: { style: 'thin' }, bottom: { style: 'thin' },
+    left: { style: 'thin' }, right: { style: 'thin' },
+  };
+  for (let col = 5; col <= totalCols; col++) {
+    const cell = dateRow.getCell(col);
+    cell.value = '/';
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFDE7' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.font = { size: 10, color: { argb: 'FFBBBBBB' } };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    };
+  }
+
   // 학생 정렬
   const sorted = [...data.students].sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name, 'ko');
     return a.grade - b.grade || a.classNum - b.classNum || a.number - b.number;
   });
 
-  // 행 5~: 학생 데이터
+  // 행 6~: 학생 데이터
   sorted.forEach((student, idx) => {
-    const rowNum = idx + 5;
     const isEven = idx % 2 === 1;
     const bgColor = isEven ? 'FFF5F9FC' : 'FFFFFFFF';
 

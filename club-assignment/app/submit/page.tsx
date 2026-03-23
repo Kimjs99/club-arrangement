@@ -112,14 +112,29 @@ export default function SubmitPage() {
 
     if (!res.ok) { alert(`파일 오류: ${data.error}`); return; }
 
+    // 마스터 시트에 학생이 없을 경우 파싱 결과로 학생 목록 구성
+    type ParsedAssignment = { number: number; name: string; clubName: string };
+    const parsed = data.assignments as ParsedAssignment[];
+
+    let currentStudents = students;
+    if (students.length === 0 && grade && classNum) {
+      const fromTemplate: Student[] = parsed
+        .filter((a) => a.name)
+        .map((a) => ({ grade, classNum, number: a.number, name: a.name }));
+      if (fromTemplate.length > 0) {
+        setStudents(fromTemplate);
+        currentStudents = fromTemplate;
+      }
+    }
+
     // 파싱 결과를 현재 학생 목록에 매핑
     const validClubNames = new Set(clubs.map((c) => c.name));
     const unknown: string[] = [];
     const newAssignments: Record<string, string> = { ...assignments };
     let applied = 0;
 
-    for (const { number, clubName } of data.assignments as { number: number; clubName: string }[]) {
-      const student = students.find((s) => s.number === number);
+    for (const { number, clubName } of parsed) {
+      const student = currentStudents.find((s) => s.number === number);
       if (!student) continue;
       if (!clubName) continue;
 
@@ -228,7 +243,7 @@ export default function SubmitPage() {
       </div>
 
       {/* 일괄 입력 (템플릿 다운로드 + 업로드) */}
-      {grade && classNum && students.length > 0 && (
+      {grade && classNum && (
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
           <h2 className="font-bold text-gray-700 mb-1">일괄 입력</h2>
           <p className="text-sm text-gray-400 mb-4">템플릿을 내려받아 동아리명을 입력한 뒤 업로드하면 자동 반영됩니다.</p>
@@ -295,7 +310,14 @@ export default function SubmitPage() {
       )}
 
       {/* 학생 배정 테이블 */}
-      {grade && classNum && (
+      {grade && classNum && students.length === 0 && !loading && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-4 text-center">
+          <p className="text-blue-700 font-medium mb-1">학생 명단이 아직 없습니다</p>
+          <p className="text-blue-500 text-sm">위에서 템플릿을 다운로드한 뒤 이름과 동아리명을 입력하고 업로드하면 자동으로 구성됩니다.</p>
+        </div>
+      )}
+
+      {grade && classNum && students.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-gray-700">

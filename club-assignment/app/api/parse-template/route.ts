@@ -32,20 +32,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '템플릿 형식이 올바르지 않습니다. (번호 헤더 없음)' }, { status: 400 });
     }
 
-    const results: { number: number; clubName: string }[] = [];
+    const results: { number: number; name: string; clubName: string }[] = [];
     let filledCount = 0;
 
     sheet.eachRow((row, rowNum) => {
       if (rowNum <= headerRowNum) return;
 
       const numVal = row.getCell(1).value;
+      const nameVal = row.getCell(2).value;
       const clubVal = row.getCell(3).value;
 
       const num = typeof numVal === 'number' ? numVal : parseInt(String(numVal ?? ''));
+      const name = nameVal?.toString().trim() ?? '';
       const clubName = clubVal?.toString().trim() ?? '';
 
       if (!isNaN(num) && num > 0) {
-        results.push({ number: num, clubName });
+        results.push({ number: num, name, clubName });
         if (clubName) filledCount++;
       }
     });
