@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.1] - 2026-03-24
+
+### 🐛 Bug Fixes
+- 이름 공란(결번·전학생) 행을 모든 데이터 현황에서 완전 제외 처리
+  - `parse-template`: 이름 없는 행은 파싱 결과에서 제외 (번호만 있는 행 무시)
+  - `submit`: 이름 없는 행을 `동아리_배정결과` 및 `마스터_학생명단` 저장에서 제외, 이름 `trim()` 적용, 제출 기록 카운트도 유효 학생 수 기준으로 변경
+  - `students`: 마스터 시트 조회 시 이름 없는 행 필터링
+
+### 📝 Documentation
+- CLAUDE.md 업데이트 — 버전 관리 방식(`package.json` ↔ 푸터 연동) 추가 (b926549)
+
+---
+
 ## [v1.2.0] - 2026-03-23
 
 ### ✨ Features

@@ -35,18 +35,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 이름 없는 행(결번·전학생) 제외
+    const validAssignments = assignments.filter((a) => a.studentName?.trim());
+
     // 배정 결과 시트 append (A:학년 B:반 C:번호 D:이름 E:동아리명 F:제출시각)
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
-    for (const a of assignments) {
+    for (const a of validAssignments) {
       await appendRow('동아리_배정결과', [
-        a.grade, a.classNum, a.number, a.studentName, a.clubName, now,
+        a.grade, a.classNum, a.number, a.studentName.trim(), a.clubName, now,
       ]);
     }
 
     // 마스터 학생명단 upsert: 없으면 추가 (A:학년 B:반 C:번호 D:이름)
     const masterRows = await getSheetData('마스터_학생명단');
     const masterData = masterRows.slice(1);
-    for (const a of assignments) {
+    for (const a of validAssignments) {
       if (!a.studentName) continue;
       const exists = masterData.some(
         (r) => Number(r[0]) === a.grade && Number(r[1]) === a.classNum && Number(r[2]) === a.number
@@ -66,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     const prevCount = existingRecord >= 0 ? parseInt(recordRows[existingRecord][5] ?? '0') : 0;
     await appendRow('배정_제출기록', [
-      now, grade, classNum, teacherName, assignments.length, prevCount + 1,
+      now, grade, classNum, teacherName, validAssignments.length, prevCount + 1,
       existingRecord >= 0 ? '재제출' : '최초제출',
     ]);
 

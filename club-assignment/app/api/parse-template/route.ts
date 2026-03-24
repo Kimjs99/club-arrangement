@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       const name = nameVal?.toString().trim() ?? '';
       const clubName = clubVal?.toString().trim() ?? '';
 
-      if (!isNaN(num) && num > 0) {
+      if (!isNaN(num) && num > 0 && name) {
         results.push({ number: num, name, clubName });
         if (clubName) filledCount++;
       }

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
     const rows = await getSheetData('마스터_학생명단');
     // A: 학년, B: 반, C: 번호, D: 이름
-    const dataRows = rows.slice(1).filter((r) => r[0]);
+    const dataRows = rows.slice(1).filter((r) => r[0] && r[3]?.trim());
 
     let students: Student[] = dataRows.map((row) => ({
       grade: parseInt(row[0]),
