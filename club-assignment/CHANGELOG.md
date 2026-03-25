@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.2] - 2026-03-25
+
+### 🐛 Bug Fixes
+- Excel 파싱 라이브러리를 ExcelJS → SheetJS(xlsx)로 교체 — 한셀 저장 파일(.xls/.xlsx) 파싱 오류 해결 (4f6c7db)
+  - ExcelJS는 한셀에서 저장한 `.xlsx` 및 `.xls`(Excel 97-2003) 형식을 파싱하지 못하는 문제 있음
+  - SheetJS는 `.xls`·`.xlsx` 모두 지원하며 한국 오피스 SW 호환성이 높음
+
+### 🔧 Chores
+- `next.config.ts`에 `serverExternalPackages: ['xlsx']` 추가 — Vercel 서버리스 번들링 오류 해결 (996ab42)
+
+---
+
 ## [v1.2.1] - 2026-03-24
 
 ### 🐛 Bug Fixes
